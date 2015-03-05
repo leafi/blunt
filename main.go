@@ -21,9 +21,56 @@ var (
 	framebufferHeight    int
 )
 
+var (
+	AddGameLoopCh  = make(chan chan time.Duration)
+	RmGameLoopCh   = make(chan chan time.Duration)
+	swapBuffersCh  = make(chan bool)
+	stopGameLoopCh = make(chan bool)
+)
+
 func init() {
 	// must perform certain functions (e.g. window creation, maintenance) on main thread
 	runtime.LockOSThread()
+}
+
+func gameLoopHandler() {
+	chans := make([]chan time.Duration, 0)
+
+	// TODO: better timekeeping! linux is probably alright but the others aren't >60FPS
+
+	lastTime := time.Now()
+
+	for {
+
+		break2 := false
+		for !break2 {
+			select {
+			case ch := <-AddGameLoopCh:
+				chans = append(chans, ch)
+			case ch := <-RmGameLoopCh:
+				for i, ch2 := range chans {
+					if ch2 == ch {
+						chans = append(chans[:i], chans[i+1:]...)
+					}
+				}
+			case <-swapBuffersCh:
+				break2 = true
+			}
+		}
+
+		// TODO: ensure t > 0 and < (reasonable maximum)!
+		nextTime := time.Now()
+		t := nextTime.Sub(lastTime)
+		for _, ch := range chans {
+			ch <- t
+		}
+		for _, ch := range chans {
+			// maybe we should report channels that take too long to respond?
+			<-ch
+		}
+		swapBuffersCh <- true
+		lastTime = nextTime
+	}
 }
 
 func tryPushFramebufferSize() {
@@ -83,6 +130,11 @@ func main() {
 
 		fw, fh := 640, 400
 
+		go gameLoopHandler()
+
+		// set up render layers
+		InitValloc()
+
 		for !window.ShouldClose() {
 			select {
 			case fw = <-framebufferSizeCh:
@@ -99,7 +151,16 @@ func main() {
 
 			gl.ClearColor(0.0, 1.0, 1.0, 1.0)
 			gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+			// sprite render layer
+			RenderValloc()
+
+			// post-render tasks for layers (updating buffers probably)
+			SpinValloc()
+
 			window.SwapBuffers()
+			swapBuffersCh <- true
+			<-swapBuffersCh
 		}
 	}()
 

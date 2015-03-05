@@ -81,6 +81,46 @@ func assets_rules_md() (*asset, error) {
 	return a, nil
 }
 
+var _assets_sprite_frag = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x52\x2e\x4b\x2d\x2a\xce\xcc\xcf\x53\x30\x34\x35\xe0\xe2\xca\x2f\x2d\x51\x28\x4b\x4d\x36\x51\x00\x32\x9c\xf3\x73\xf2\x8b\xac\xb9\xb8\xca\xf2\x33\x53\x14\x72\x13\x33\xf3\x34\x34\xb9\xaa\xb9\x14\x80\x00\x26\xa9\x60\x0b\x56\xac\x61\xa0\x67\xaa\xa3\x00\x26\x0c\xf5\x0c\xc0\x84\xa6\x35\x57\x2d\x17\x20\x00\x00\xff\xff\x27\xcb\xa1\xd9\x5b\x00\x00\x00")
+
+func assets_sprite_frag_bytes() ([]byte, error) {
+	return bindata_read(
+		_assets_sprite_frag,
+		"assets/sprite.frag",
+	)
+}
+
+func assets_sprite_frag() (*asset, error) {
+	bytes, err := assets_sprite_frag_bytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindata_file_info{name: "assets/sprite.frag", size: 91, mode: os.FileMode(420), modTime: time.Unix(1425514841, 0)}
+	a := &asset{bytes: bytes, info:  info}
+	return a, nil
+}
+
+var _assets_sprite_vert = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x52\x2e\x4b\x2d\x2a\xce\xcc\xcf\x53\x30\x34\x35\xe0\xe2\xca\xcc\x53\x28\x4b\x4d\x36\x52\x28\xc8\x2f\xce\x2c\x01\x8a\x5a\x73\x71\x95\xe5\x67\xa6\x28\xe4\x26\x66\xe6\x69\x68\x72\x55\x73\x29\x00\x41\x7a\x4e\x7c\x00\x54\x5e\xc1\x16\xa4\xde\x44\x03\xa6\x5e\x47\xc1\x40\xcf\x40\x47\xc1\x50\xcf\x40\xd3\x9a\xab\x96\x0b\x10\x00\x00\xff\xff\x38\x4d\xce\x71\x5d\x00\x00\x00")
+
+func assets_sprite_vert_bytes() ([]byte, error) {
+	return bindata_read(
+		_assets_sprite_vert,
+		"assets/sprite.vert",
+	)
+}
+
+func assets_sprite_vert() (*asset, error) {
+	bytes, err := assets_sprite_vert_bytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindata_file_info{name: "assets/sprite.vert", size: 93, mode: os.FileMode(420), modTime: time.Unix(1425514822, 0)}
+	a := &asset{bytes: bytes, info:  info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -123,6 +163,8 @@ func AssetNames() []string {
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
 	"assets/Rules.md": assets_rules_md,
+	"assets/sprite.frag": assets_sprite_frag,
+	"assets/sprite.vert": assets_sprite_vert,
 }
 
 // AssetDir returns the file names below a certain
@@ -167,6 +209,10 @@ type _bintree_t struct {
 var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 	"assets": &_bintree_t{nil, map[string]*_bintree_t{
 		"Rules.md": &_bintree_t{assets_rules_md, map[string]*_bintree_t{
+		}},
+		"sprite.frag": &_bintree_t{assets_sprite_frag, map[string]*_bintree_t{
+		}},
+		"sprite.vert": &_bintree_t{assets_sprite_vert, map[string]*_bintree_t{
 		}},
 	}},
 }}

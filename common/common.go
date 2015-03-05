@@ -1,9 +1,10 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"github.com/go-gl/gl/v4.1-core/gl"
-	"io/ioutil"
+	"strings"
 )
 
 func NewProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
@@ -21,6 +22,9 @@ func NewProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error)
 
 	gl.AttachShader(program, vertexShader)
 	gl.AttachShader(program, fragmentShader)
+
+	// TODO: Set which output goes where, here!
+
 	gl.LinkProgram(program)
 
 	var status int32
@@ -44,7 +48,7 @@ func NewProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error)
 func compileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
-	csource := gl.Str(source)
+	csource := gl.Str(source + "\x00")
 	gl.ShaderSource(shader, 1, &csource, nil)
 	gl.CompileShader(shader)
 
