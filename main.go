@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	//"github.com/go-gl/mathgl/mgl32"
 )
@@ -91,10 +91,10 @@ func main() {
 	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.Resizable, glfw.True)
-	glfw.WindowHint(glfw.ContextVersionMajor, 4)
-	glfw.WindowHint(glfw.ContextVersionMinor, 1)
+	glfw.WindowHint(glfw.ContextVersionMajor, 3)
+	glfw.WindowHint(glfw.ContextVersionMinor, 3)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
-	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+	//glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
 	window, err := glfw.CreateWindow(640, 400, "Cube", nil, nil)
 
@@ -141,6 +141,7 @@ func main() {
 				fh = <-framebufferSizeCh
 				// TODO: viewport shit
 				fmt.Printf("got %v x %v\n", fw, fh)
+				gl.Viewport(0, 0, int32(fw), int32(fh))
 			default:
 				// No resize events.
 			}

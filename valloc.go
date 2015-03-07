@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/gl/v3.3-core/gl"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/leafi/blunt/common"
 )
 
 var valloc chan int = make(chan int)
 var vfree chan int = make(chan int)
-var vstop chan struct{} = make(chan struct{})
+var vstop chan bool = make(chan bool)
 
 const highv int = 256000
 
@@ -23,6 +24,29 @@ var (
 	ready    bool
 )
 
+var (
+	propbo    uint32
+	attrProps uint32
+	props     []Prop
+)
+
+type int2 struct {
+	x int
+	y int
+}
+
+type Prop struct {
+	position mgl32.Vec2
+	size     mgl32.Vec2
+	// --- std140 ---
+	scale float32
+	texUV int2
+	angle float32
+	// --- std140 ---
+	tint mgl32.Vec4
+	// --- std140 ---
+}
+
 func InitValloc() {
 
 	nextPostRender <- func() {
@@ -32,16 +56,39 @@ func InitValloc() {
 		gl.GenBuffers(1, &vbo)
 		gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 
-		vertices = []float32{
-			0.0,
-			0.5,
-			0.5,
-			-0.5,
-			-0.5,
-			-0.5,
+		prop12 := []Prop{
+			Prop{
+				position: mgl32.Vec2{0.0, 0.0},
+				size:     mgl32.Vec2{1.0, 1.0},
+				scale:    1.0,
+				tint:     mgl32.Vec4{1.0, 1.0, 1.0, 1.0},
+			},
 		}
 
-		gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.DYNAMIC_DRAW)
+		gl.GenBuffers(1, &propbo)
+		gl.BindBuffer(gl.UNIFORM_BUFFER, propbo)
+		gl.BufferData(gl.UNIFORM_BUFFER, len(prop12)*48, gl.Ptr(prop12), gl.STREAM_DRAW)
+
+		// !!! BufferIndex 0 !!!
+		gl.BindBufferRange(gl.UNIFORM_BUFFER, 0, propbo, 0, len(prop12)*48)
+
+		vertices = []float32{
+			0.0,
+			1.0,
+			0.0,
+			0.0,
+			1.0,
+			0.0,
+
+			1.0,
+			0.0,
+			1.0,
+			1.0,
+			0.0,
+			1.0,
+		}
+
+		gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 
 		vshader, _ := Asset("assets/sprite.vert")
 		fshader, _ := Asset("assets/sprite.frag")
@@ -59,6 +106,10 @@ func InitValloc() {
 		gl.VertexAttribPointer(attrPos, 2, gl.FLOAT, false, 0, gl.PtrOffset(0))
 
 		gl.EnableVertexAttribArray(attrPos)
+
+		attrProps = uint32(gl.GetUniformBlockIndex(prog, gl.Str("Props"+"\x00")))
+		// !!! BlockBinding 0 !!!
+		gl.UniformBlockBinding(prog, attrPos, 0)
 
 		ready = true
 	}
@@ -92,13 +143,20 @@ func InitValloc() {
 	}()
 }
 
+/*void FillUniformBuffer() {
+	GL.BindBuffer(BufferTarget.UniformBuffer, BufferUBO);
+	GL.BufferSubData(BufferTarget.UniformBuffer, (IntPtr)0, (IntPtr)(sizeof(float) * 8), ref UBOData);
+	GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+}*/
+
 func RenderValloc() {
 	if !ready {
 		return
 	}
 
 	// start at 0, render 3 verts == 1 tri
-	gl.DrawArrays(gl.TRIANGLES, 0, 3)
+	//gl.DrawArrays(gl.TRIANGLES, 0, 6)
+	gl.DrawArraysInstanced(gl.TRIANGLES, 0, 6, 1)
 }
 
 // called from GL thread & coroutine

@@ -3,7 +3,7 @@ package common
 import (
 	"errors"
 	"fmt"
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/gl/v3.3-core/gl"
 	"strings"
 )
 

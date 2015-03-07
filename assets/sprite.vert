@@ -1,6 +1,18 @@
-#version 150
+#version 330
 
-in vec2 position;
+layout (std140) uniform Props {
+	vec2 position;
+	vec2 size;
+
+	float scale;
+	int texU;
+	int texV;
+	float angle;
+
+	vec4 tint;
+};
+
+//in vec2 position;
 
 void main()
 {
