@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/leafi/blunt/common"
@@ -25,9 +26,9 @@ var (
 )
 
 var (
-	propbo    uint32
-	attrProps uint32
-	props     []Prop
+	propbo        uint32
+	props         []Prop
+	propsToUpdate []int
 )
 
 type int2 struct {
@@ -50,28 +51,27 @@ type Prop struct {
 func InitValloc() {
 
 	nextPostRender <- func() {
+		vshader, _ := Asset("assets/sprite.vert")
+		fshader, _ := Asset("assets/sprite.frag")
+		var err error
+		prog, err = common.NewProgram(string(vshader), string(fshader))
+
+		if err != nil {
+			panic(err)
+		}
+
+		gl.UseProgram(prog)
+
 		gl.GenVertexArrays(1, &vao)
 		gl.BindVertexArray(vao)
 
 		gl.GenBuffers(1, &vbo)
 		gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 
-		prop12 := []Prop{
-			Prop{
-				position: mgl32.Vec2{0.0, 0.0},
-				size:     mgl32.Vec2{1.0, 1.0},
-				scale:    1.0,
-				tint:     mgl32.Vec4{1.0, 1.0, 1.0, 1.0},
-			},
-		}
-
-		gl.GenBuffers(1, &propbo)
-		gl.BindBuffer(gl.UNIFORM_BUFFER, propbo)
-		gl.BufferData(gl.UNIFORM_BUFFER, len(prop12)*48, gl.Ptr(prop12), gl.STREAM_DRAW)
-
-		// !!! BufferIndex 0 !!!
-		gl.BindBufferRange(gl.UNIFORM_BUFFER, 0, propbo, 0, len(prop12)*48)
-
+		// origin is bottom-left rather than centre b/c we'll always have to fiddle
+		// with the offsets on a sprite-by-sprite basis anyway.
+		// this way, at least, doing things like rendering regular sized tiles &
+		// ui elements will be trivial.
 		vertices = []float32{
 			0.0,
 			1.0,
@@ -90,26 +90,42 @@ func InitValloc() {
 
 		gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 
-		vshader, _ := Asset("assets/sprite.vert")
-		fshader, _ := Asset("assets/sprite.frag")
-		var err error
-		prog, err = common.NewProgram(string(vshader), string(fshader))
-
-		if err != nil {
-			panic(err)
-		}
-
-		gl.UseProgram(prog)
-
-		attrPos = uint32(gl.GetAttribLocation(prog, gl.Str("position"+"\x00")))
+		attrPos = uint32(gl.GetAttribLocation(prog, gl.Str("basePosition"+"\x00")))
 		// vvv captures current VBO (to the VAO for this attribute) vvv
 		gl.VertexAttribPointer(attrPos, 2, gl.FLOAT, false, 0, gl.PtrOffset(0))
 
 		gl.EnableVertexAttribArray(attrPos)
 
-		attrProps = uint32(gl.GetUniformBlockIndex(prog, gl.Str("Props"+"\x00")))
-		// !!! BlockBinding 0 !!!
-		gl.UniformBlockBinding(prog, attrPos, 0)
+		props := []Prop{
+			Prop{
+				position: mgl32.Vec2{-0.5, 0.0},
+				size:     mgl32.Vec2{1.0, 1.0},
+				scale:    0.4,
+				tint:     mgl32.Vec4{1.0, 1.0, 1.0, 1.0},
+			},
+		}
+
+		gl.GenBuffers(1, &propbo)
+		gl.BindBuffer(gl.ARRAY_BUFFER, propbo)
+		gl.BufferData(gl.ARRAY_BUFFER, len(props)*48, gl.Ptr(props), gl.STREAM_DRAW)
+
+		instanceAttrNames := []string{"position", "size", "scale", "texU", "texV", "angle", "tint"}
+		instanceAttrTypes := []uint32{gl.FLOAT, gl.FLOAT, gl.FLOAT, gl.INT, gl.INT, gl.FLOAT, gl.FLOAT}
+		instanceAttrMul := []int32{2, 2, 1, 1, 1, 1, 4}
+
+		offset := 0
+		attr := uint32(0)
+		for i, name := range instanceAttrNames {
+			attr = uint32(gl.GetAttribLocation(prog, gl.Str(name+"\x00")))
+			fmt.Printf("%v %v (%v)\n", i, name, attr)
+			gl.VertexAttribPointer(attr, instanceAttrMul[i], instanceAttrTypes[i], false, 48, gl.PtrOffset(offset))
+			gl.EnableVertexAttribArray(attr)
+			gl.VertexAttribDivisor(attr, 1)
+
+			// gl.FLOAT, gl.INT are always 4 bytes. so that's easy-ish.
+			offset += 4 * int(instanceAttrMul[i])
+			attr++
+		}
 
 		ready = true
 	}
